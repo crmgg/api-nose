@@ -1,14 +1,20 @@
 package co.edu.uco.nose.data.dao.entity.postgresql;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.UUID;
 
+import co.edu.uco.nose.data.dao.entity.SqlConnection;
 import co.edu.uco.nose.data.dao.entity.UserDAO;
 import co.edu.uco.nose.entity.UserEntity;
 
-public final class UserPostgresqlDAO implements UserDAO {
+public final class UserPostgresqlDAO extends SqlConnection implements UserDAO {
 
-	@Override
+    UserPostgresqlDAO(Connection connection2) {
+        super(connection2);
+    }
+
+    @Override
 	public void create(UserEntity entity) {
 		// TODO Auto-generated method stub
 		
