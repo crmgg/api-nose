@@ -11,10 +11,21 @@ public enum MessagesEnum {
 	TECHNICAL_ERROR_SQL_CONNCETION_IS_CLOSED("Conexion contra la fuente de informacion deseada cerrada","La conexion requerida para llevar a cabo la operacion contra la base de datos llegó cerrada."),
 	
 	USER_ERROR_SQL_CONNCETION_UNEXPECTED_ERROR_VALIDATING_CONNECTION_STATUS("Problema inesperado contra la fuente de informacion deseada vacia","La conexion requerida para llevar a cabo la operacion contra la fuente de informacion deseada está vacia. Por favor intente de nuevo y si el problema persiste contacte al administrador de la aplicacion"),
-	TECHNICAL_ERROR_SQL_CONNCETION_UNEXPECTED_ERROR_VALIDATING_CONNECTION_STATUS("Problema inesperado","sfsdgdfg");
-	
-	
-	private String title;
+	TECHNICAL_ERROR_SQL_CONNCETION_UNEXPECTED_ERROR_VALIDATING_CONNECTION_STATUS("Problema inesperado","sfsdgdfg"), TECHNICAL_ERROR_SQL_CONNECTION_UNEXPECTED_ERROR_VALIDATING_TRANSACTION_IS_STARTED(, );
+
+
+    public static final MessagesEnum USER_ERROR_SQL_CONNECTION_UNEXPECTED_ERROR_VALIDATING_TRANSACTION_IS_STARTED = ;
+    public static final MessagesEnum TECHNICAL_ERROR_SQL_CONNECTION_SQL_EXCEPTION_VALIDATING_TRANSACTION_IS_STARTED = ;
+    public static final MessagesEnum USER_ERROR_SQL_CONNECTION_IS_EMPTY = ;
+    public static final MessagesEnum TECHNICAL_ERROR_SQL_CONNECTION_IS_EMPTY = ;
+    public static final MessagesEnum USER_ERROR_SQL_CONNECTION_IS_CLOSED = ;
+    public static final MessagesEnum TECHNICAL_ERROR_SQL_CONNECTION_IS_CLOSED = ;
+    public static final MessagesEnum USER_ERROR_SQL_CONNECTION_UNEXPECTED_ERROR_VALIDATING_CONNECTION_STATUS = ;
+    public static final MessagesEnum TECHNICAL_ERROR_SQL_CONNECTION_SQL_EXCEPTION_VALIDATING_CONNECTION_STATUS = ;
+    public static final MessagesEnum USER_ERROR_TRANSACTION_IS_NOT_STARTED = ;
+    public static final MessagesEnum TECHNICAL_ERROR_TRANSACTION_IS_NOT_STARTED = ;
+    public static final MessagesEnum TECHNICAL_ERROR_SQL_CONNECTION_UNEXPECTED_ERROR_VALIDATING_CONNECTION_STATUS =;
+    private String title;
 	private String content;
 	
 	private MessagesEnum(final String title, final String content) {
