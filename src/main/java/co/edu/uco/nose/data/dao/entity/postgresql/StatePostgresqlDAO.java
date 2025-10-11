@@ -9,7 +9,7 @@ import co.edu.uco.nose.data.dao.entity.StateDAO;
 
 public final class StatePostgresqlDAO extends SqlConnection implements StateDAO {
 
-    StatePostgresqlDAO(Connection connection2) {
+    public StatePostgresqlDAO(Connection connection2) {
         super(connection2);
     }
 

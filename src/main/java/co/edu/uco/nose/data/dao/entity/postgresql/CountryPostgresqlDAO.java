@@ -9,7 +9,7 @@ import co.edu.uco.nose.data.dao.entity.*;
 
 public final class CountryPostgresqlDAO extends SqlConnection implements CountryDAO{
 
-    CountryPostgresqlDAO(Connection connection2) {
+    public CountryPostgresqlDAO(Connection connection2) {
         super(connection2);
     }
 

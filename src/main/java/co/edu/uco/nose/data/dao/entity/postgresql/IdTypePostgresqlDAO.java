@@ -6,27 +6,28 @@ import java.util.UUID;
 
 import co.edu.uco.nose.data.dao.entity.*;
 import co.edu.uco.nose.dto.IdTypeDTO;
+import co.edu.uco.nose.entity.IdTypeEntity;
 
-public final class IdTypePostgresqlDAO extends SqlConnection implements IdTypeDTO {
+public final class IdTypePostgresqlDAO extends SqlConnection implements IdTypeDAO {
 
-    IdTypePostgresqlDAO(Connection connection2) {
-        super(connection2);
+    public IdTypePostgresqlDAO(Connection connection) {
+        super(connection);
     }
 
     @Override
-	public List<IdTypeDTO> findAll() {
+	public List<IdTypeEntity> findAll() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public List<IdTypeDTO> findByFilter(IdTypeDTO filterEntity) {
+	public List<IdTypeEntity> findByFilter(IdTypeEntity filterEntity) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public IdTypeDTO findById(UUID id) {
+	public IdTypeEntity findById(UUID id) {
 		// TODO Auto-generated method stub
 		return null;
 	}
