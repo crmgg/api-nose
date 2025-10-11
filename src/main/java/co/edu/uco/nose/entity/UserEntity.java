@@ -115,6 +115,7 @@ public class UserEntity extends Entity {
 
     public void setEmail(String email) {
         this.email = email;
+        setEmailConfirmed(false);
     }
 
     public String getPhoneNumber() {
