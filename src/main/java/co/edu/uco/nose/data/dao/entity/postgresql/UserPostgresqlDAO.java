@@ -1,6 +1,8 @@
 package co.edu.uco.nose.data.dao.entity.postgresql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
@@ -8,6 +10,7 @@ import java.util.UUID;
 import co.edu.uco.nose.crosscuting.exception.NoseException;
 import co.edu.uco.nose.crosscuting.helper.SqlConnectionHelper;
 import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
+import co.edu.uco.nose.crosscuting.messagescatalog.MessagesEnum;
 import co.edu.uco.nose.data.dao.entity.SqlConnection;
 import co.edu.uco.nose.data.dao.entity.UserDAO;
 import co.edu.uco.nose.entity.CityEntity;
@@ -77,110 +80,56 @@ public final class UserPostgresqlDAO extends SqlConnection implements UserDAO {
         return null;
     }
 
+
     @Override
-    public UserEntity findById(final UUID id) {
+    public UserEntity findById(UUID id) {
+        final String sql = "SELECT id, identitydocument, name, firstlastname, secondlastname, email, phone, username, password, emailconfirmation, phoneconfirmation, accountstate FROM users WHERE id = ?";
 
-        var user = new UserEntity();
+        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql)) {
 
-        final var sql = new StringBuilder();
-        sql.append("SELECT ");
-        sql.append("  	u.id, ");
-        sql.append("  	ti.id AS idTipoIdentificacion, ");
-        sql.append("  	ti.nombre AS nombreTipoIdentificacion, ");
-        sql.append("  	u.numeroIdentificacion, ");
-        sql.append("  	u.primerNombre, ");
-        sql.append("  	u.segundoNombre, ");
-        sql.append("  	u.primerApellido, ");
-        sql.append("  	u.segundoApellido, ");
-        sql.append("  	c.id AS idCiudadResidencia, ");
-        sql.append("  	c.nombre AS nombreCiudadResidencia, ");
-        sql.append("  	d.id AS idDepartamentoCiudadResidencia, ");
-        sql.append("  	d.nombre AS nombreDepartamentoCiudadResidencia, ");
-        sql.append("  	p.id AS idPaisDepartamentoCiudadResidencia, ");
-        sql.append("  	p.nombre AS nombrePaisDepartamentoCiudadResidencia, ");
-        sql.append("  	u.correoElectronico, ");
-        sql.append("  	u.numeroTelefonoMovil, ");
-        sql.append("  	u.correoElectronicoConfirmado, ");
-        sql.append("  	u.numeroTelefonoMovilConfirmado ");
-        sql.append("FROM Usuario AS u ");
-        sql.append("INNER JOIN TipoIdentificacion AS ti ");
-        sql.append("ON 	u.tipoIdentificacion = ti.id ");
-        sql.append("INNER JOIN Ciudad AS c ");
-        sql.append("ON 	u.ciudadResidencia = c.id ");
-        sql.append("INNER JOIN Departamento AS d ");
-        sql.append("ON 	c.departamento = d.id ");
-        sql.append("INNER JOIN Pais AS p ");
-        sql.append("ON 	d.pais = p.id; ");
-        sql.append("WHERE u.id = ?; ");
+            preparedStatement.setObject(1, id);
+            final ResultSet resultSet = preparedStatement.executeQuery();
 
-        try (var preparedStatement = this.getConnection().prepareStatement(sql.toString())) {
-
-            preparedStatement.setObject(1,id);
-
-            try (var resultSet= preparedStatement.executeQuery()){
-                if (resultSet.next()) {
-                    var idType = new IdTypeEntity();
-                    idType.setId(UUIDHelper.getUUIDHelper().getFromString(resultSet.getString("idTipoIdentificacion")));
-                    idType.setName(resultSet.getString("nombreTipoIdentificacion"));
-
-
-                    var country = new CountryEntity();
-                    country.setId(UUIDHelper.getUUIDHelper().getFromString(resultSet.getString("idPaisDepartamentoCiudadResidencia")));
-                    country.setName(resultSet.getString("nombrePaisDepartamentoCiudadResidencia"));
-
-
-                    var state = new StateEntity();
-                    state.setId(UUIDHelper.getUUIDHelper().getFromString(resultSet.getString("idDepartamentoCiudadResidencia")));
-                    state.setName(resultSet.getString("nombreDepartamentoCiudadResidencia"));
-
-
-                    var city = new CityEntity();
-                    city.setId(UUIDHelper.getUUIDHelper().getFromString(resultSet.getString("idCiudadResidencia")));
-                    city.setName(resultSet.getString("nombreCiudadResidencia"));
-
-                    user.setId(UUIDHelper.getUUIDHelper().getFromString(resultSet.getString("id")));
-                    user.setIdType(idType);
-                    user.setFirstName(resultSet.getString("primerNombre"));
-                    user.setSecondName(resultSet.getString("segundoNombre"));
-                    user.setFirstLastName(resultSet.getString("primerApellido"));
-                    user.setSecondLastName(resultSet.getString("segundoApellido"));
-                    user.setResidenceCity(city);
-                    user.setEmail(resultSet.getString("correoElectronico"));
-                    user.setPhoneNumber(resultSet.getString("numeroTelefonoMovil"));
-                    user.setEmailConfirmed(resultSet.getBoolean("correoElectronicoConfirmado"));
-                    user.setMobileNumberConfirmed(resultSet.getBoolean("numeroTelefonoMovilConfirmado"));
-                }
-
-
-            }catch (final SQLException exception) {
-                var userMessage = "Se ha presentado un error al tratar de consultar el usuario";
-                var technicalMessage = "se ha presentado un error al intentar consultar el usuario en la base de datos. Por favor verifique la traza completa del error";
-                throw NoseException.create(exception, userMessage, technicalMessage);
-            } catch (final Exception exception) {
-                var userMessage = "No se pudo actualizar el usuario";
-                var technicalMessage = "Se ha presentado un error inesperado al intentar actualizar el usuario en la base de datos. Por favor verifique la traza completa del error";
-                throw NoseException.create(exception, userMessage, technicalMessage);
-            } catch (final Throwable exception) {
-                var userMessage = "No se pudo actualizar el usuario";
-                var technicalMessage = "Se ha presentado un error critico al intentar actualizar el usuario en la base de datos. Por favor verifique la traza completa del error";
-                throw NoseException.create(exception, userMessage, technicalMessage);
+            if (resultSet.next()) {
+                return new UserEntity(
+                        (UUID) resultSet.getObject("id"),
+                        resultSet.getString("identitydocument"),
+                        resultSet.getString("name"),
+                        resultSet.getString("firstlastname"),
+                        resultSet.getString("secondlastname"),
+                        resultSet.getString("email"),
+                        resultSet.getString("phone"),
+                        resultSet.getString("username"),
+                        resultSet.getString("password"),
+                        resultSet.getBoolean("emailconfirmation"),
+                        resultSet.getBoolean("phoneconfirmation"),
+                        resultSet.getBoolean("accountstate")
+                );
+            } else {
+                return null;
             }
-            return user;
-        } catch (final SQLException exception) {
-            var userMessage = "Se ha presentado un error al tratar de consultar el usuario";
-            var technicalMessage = "se ha presentado un error al intentar consultar el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
-        } catch (final Exception exception) {
-            var userMessage = "No se pudo consultar el usuario";
-            var technicalMessage = "Se ha presentado un error inesperado al intentar actualizar el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
-        } catch (final Throwable exception) {
-            var userMessage = "No se pudo actualizar el usuario";
-            var technicalMessage = "Se ha presentado un error critico al intentar actualizar el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
-        }
 
+        } catch (SQLException exception) {
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_FIND_BY_ID_SQL.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_ID_SQL.getContent(),
+                    exception
+            );
+        } catch (Exception exception) {
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_FIND_BY_ID_UNEXPECTED.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_ID_UNEXPECTED.getContent(),
+                    (SQLException) exception
+            );
+        } catch (Throwable exception) {
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_FIND_BY_ID_CRITICAL.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_ID_CRITICAL.getContent(),
+                    (SQLException) exception
+            );
+        }
     }
+
 
     @Override
     public void update(UserEntity entity) {

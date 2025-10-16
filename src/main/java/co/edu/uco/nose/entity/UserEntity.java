@@ -3,7 +3,6 @@ package co.edu.uco.nose.entity;
 import java.util.UUID;
 
 import co.edu.uco.nose.crosscuting.helper.TextHelper;
-import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 
 public class UserEntity extends Entity {
 
@@ -20,7 +19,7 @@ public class UserEntity extends Entity {
     private boolean mobileNumberConfirmed;
 
     public UserEntity() {
-        super(UUIDHelper.getUUIDHelper().getDefault());
+        super();
         setFirstName(TextHelper.getDefault());
         setSecondName(TextHelper.getDefault());
         setFirstLastName(TextHelper.getDefault());
@@ -35,7 +34,7 @@ public class UserEntity extends Entity {
     }
 
     public UserEntity(final UUID id) {
-        super(id);
+        super();
         setFirstName(TextHelper.getDefault());
         setSecondName(TextHelper.getDefault());
         setFirstLastName(TextHelper.getDefault());
@@ -47,6 +46,10 @@ public class UserEntity extends Entity {
         setPhoneNumber(TextHelper.getDefault());
         setEmailConfirmed(false);
         setMobileNumberConfirmed(false);
+    }
+
+    public UserEntity(UUID id, String identitydocument, String name, String firstlastname, String secondlastname, String email, String phone, String username, String password, boolean emailconfirmation, boolean phoneconfirmation, boolean accountstate) {
+        super();
     }
 
     public static final UserEntity build() {

@@ -7,7 +7,7 @@ import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 public class Entity {
 	private UUID id;
 	
-	protected Entity(final UUID id) {
+	protected Entity() {
 		
 	}
 

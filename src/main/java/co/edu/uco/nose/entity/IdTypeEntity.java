@@ -3,7 +3,6 @@ package co.edu.uco.nose.entity;
 import java.util.UUID;
 
 import co.edu.uco.nose.crosscuting.helper.TextHelper;
-import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 
 public class IdTypeEntity extends Entity{
 	
@@ -12,20 +11,20 @@ public class IdTypeEntity extends Entity{
 	private String description;
 	
 	public IdTypeEntity() {
-		super(UUIDHelper.getUUIDHelper().getDefault());
+		super();
 		setName(TextHelper.getDefault());
 		setDescrption(TextHelper.getDefault());
 	}
 	
 
 	public IdTypeEntity(final UUID id) {
-		super(id);
+		super();
 		setName(TextHelper.getDefault());
 		setDescrption(TextHelper.getDefault());
 	}
 	
 	public IdTypeEntity(final UUID id,final String name) {
-		super(id);
+		super();
 		this.name = name;
 		this.description = TextHelper.getDefault();
 		

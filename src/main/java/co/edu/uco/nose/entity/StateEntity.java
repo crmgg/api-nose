@@ -3,7 +3,6 @@ package co.edu.uco.nose.entity;
 import java.util.UUID;
 
 import co.edu.uco.nose.crosscuting.helper.TextHelper;
-import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 
 public class StateEntity extends Entity{
 	
@@ -11,18 +10,18 @@ public class StateEntity extends Entity{
 	private String name;
 	
 	public StateEntity() {
-		super(UUIDHelper.getUUIDHelper().getDefault());
+		super();
 		setName(TextHelper.getDefault());
 	}
 	
 
 	public StateEntity(final UUID id) {
-		super(id);
+		super();
 		setName(TextHelper.getDefault());
 	}
 	
 	public StateEntity(final UUID id,final String name) {
-		super(id);
+		super();
 		this.name = name;
 	}
 
