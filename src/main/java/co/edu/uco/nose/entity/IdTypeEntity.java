@@ -30,7 +30,11 @@ public class IdTypeEntity extends Entity{
 		
 	}
 
-	public String getName() {
+    public IdTypeEntity(UUID id, String name, String abbreviation) {
+
+    }
+
+    public String getName() {
 		return name;
 	}
 

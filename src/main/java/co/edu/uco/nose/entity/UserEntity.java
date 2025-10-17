@@ -1,5 +1,7 @@
 package co.edu.uco.nose.entity;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.UUID;
 
 import co.edu.uco.nose.crosscuting.helper.TextHelper;
@@ -16,9 +18,9 @@ public class UserEntity extends Entity {
     private String email;
     private String phoneNumber;
     private boolean emailConfirmed;
-    private boolean mobileNumberConfirmed;
+    private boolean phoneNumberConfirmed;
 
-    public UserEntity() {
+    public UserEntity(UUID id, String idType, String firstname, String secondname, String firstlastname, String secondlastname, String email, String phone, String username, String password, boolean emailconfirmation, boolean phoneconfirmation) {
         super();
         setFirstName(TextHelper.getDefault());
         setSecondName(TextHelper.getDefault());
@@ -30,7 +32,7 @@ public class UserEntity extends Entity {
         setEmail(TextHelper.getDefault());
         setPhoneNumber(TextHelper.getDefault());
         setEmailConfirmed(false);
-        setMobileNumberConfirmed(false);
+        setPhoneNumberConfirmed(false);
     }
 
     public UserEntity(final UUID id) {
@@ -45,16 +47,33 @@ public class UserEntity extends Entity {
         setEmail(TextHelper.getDefault());
         setPhoneNumber(TextHelper.getDefault());
         setEmailConfirmed(false);
-        setMobileNumberConfirmed(false);
+        setPhoneNumberConfirmed(false);
     }
 
-    public UserEntity(UUID id, String identitydocument, String name, String firstlastname, String secondlastname, String email, String phone, String username, String password, boolean emailconfirmation, boolean phoneconfirmation, boolean accountstate) {
+    public UserEntity(UUID id, String idType, String name, String firstlastname, String secondlastname, String email, String phone, String username, String password, boolean emailconfirmation, boolean phoneconfirmation, boolean accountstate) {
         super();
     }
 
-    public static final UserEntity build() {
-        return new UserEntity();
+    public UserEntity(UUID id, String idType, String name, String firstlastname, String secondlastname, String email, String phone, String username, String password, boolean emailconfirmation, boolean phoneconfirmation) {
     }
+
+    public static UserEntity buildFromResultSet(final ResultSet resultSet) throws SQLException, SQLException {
+        return new UserEntity(
+                (UUID) resultSet.getObject("id"),
+                resultSet.getString("idType"),
+                resultSet.getString("firstname"),
+                resultSet.getString("secondname"),
+                resultSet.getString("firstlastname"),
+                resultSet.getString("secondlastname"),
+                resultSet.getString("email"),
+                resultSet.getString("phone"),
+                resultSet.getString("username"),
+                resultSet.getString("password"),
+                resultSet.getBoolean("emailconfirmation"),
+                resultSet.getBoolean("phoneconfirmation")
+        );
+    }
+
 
     public String getFirstName() {
         return firstName;
@@ -89,7 +108,7 @@ public class UserEntity extends Entity {
     }
 
     public String getIdentification() {
-        return identification;
+        return identification = identification;
     }
 
     public void setIdentification(String identification) {
@@ -137,11 +156,11 @@ public class UserEntity extends Entity {
         this.emailConfirmed = emailConfirmed;
     }
 
-    public boolean isMobileNumberConfirmed() {
-        return mobileNumberConfirmed;
+    public boolean isPhoneNumberConfirmed() {
+        return phoneNumberConfirmed;
     }
 
-    public void setMobileNumberConfirmed(boolean mobileNumberConfirmed) {
-        this.mobileNumberConfirmed = mobileNumberConfirmed;
+    public void setPhoneNumberConfirmed(boolean mobileNumberConfirmed) {
+        this.phoneNumberConfirmed = mobileNumberConfirmed;
     }
 }

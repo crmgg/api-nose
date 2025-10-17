@@ -33,8 +33,16 @@ public final class NoseException extends RuntimeException {
 	public static NoseException create(final Throwable rootException, final String userMessage, final String technicalMessage) {
 		return new NoseException(rootException, userMessage, technicalMessage);
 	}
-	
-	private Throwable getRootException() {
+
+    public static Exception create(Exception exception, String content, String content1, SQLException exception1) {
+        return null;
+    }
+
+    public static Exception create(String content, String content1, SQLException exception) {
+        return null;
+    }
+
+    private Throwable getRootException() {
 		return rootException;
 	}
 	private void setRootException(Throwable rootException) {

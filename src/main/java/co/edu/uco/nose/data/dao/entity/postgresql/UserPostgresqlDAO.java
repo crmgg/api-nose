@@ -9,14 +9,10 @@ import java.util.UUID;
 
 import co.edu.uco.nose.crosscuting.exception.NoseException;
 import co.edu.uco.nose.crosscuting.helper.SqlConnectionHelper;
-import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 import co.edu.uco.nose.crosscuting.messagescatalog.MessagesEnum;
+import co.edu.uco.nose.data.dao.entity.IdTypeDAO;
 import co.edu.uco.nose.data.dao.entity.SqlConnection;
 import co.edu.uco.nose.data.dao.entity.UserDAO;
-import co.edu.uco.nose.entity.CityEntity;
-import co.edu.uco.nose.entity.CountryEntity;
-import co.edu.uco.nose.entity.IdTypeEntity;
-import co.edu.uco.nose.entity.StateEntity;
 import co.edu.uco.nose.entity.UserEntity;
 
 public final class UserPostgresqlDAO extends SqlConnection implements UserDAO {
@@ -44,21 +40,27 @@ public final class UserPostgresqlDAO extends SqlConnection implements UserDAO {
             preparedStatement.setString(9, entity.getEmail());
             preparedStatement.setString(10, entity.getPhoneNumber());
             preparedStatement.setBoolean(11, entity.isEmailConfirmed());
-            preparedStatement.setBoolean(12, entity.isMobileNumberConfirmed());
+            preparedStatement.setBoolean(12, entity.isPhoneNumberConfirmed());
             preparedStatement.executeUpdate();
 
         } catch (final SQLException exception) {
-            var userMessage= "No se pudo crear el usuario";
-            var technicalMessage= "Se ha presentado un error al intentar crear el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_SQL_CREATE.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_SQL_CREATE.getContent(),
+                    (SQLException) exception
+            );
         } catch (final Exception exception) {
-            var userMessage= "No se pudo crear el usuario";
-            var technicalMessage= "Se ha presentado un error inesperado al intentar crear el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_UNEXPECTED_CREATE.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_UNEXPECTED_CREATE.getContent(),
+                    (SQLException) exception
+            );
         } catch (final Throwable exception) {
-            var userMessage= "No se pudo crear el usuario";
-            var technicalMessage= "Se ha presentado un error critico al intentar crear el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_CRITICAL_CREATE.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_CRITICAL_CREATE.getContent(),
+                    (SQLException) exception
+            );
         }
     }
 
@@ -67,25 +69,193 @@ public final class UserPostgresqlDAO extends SqlConnection implements UserDAO {
         // TODO Auto-generated constructor stub
     }
 
+    // Java
+    @Override
+    public List<UserEntity> findByFilter(UserEntity filterEntity) {
+        if (filterEntity == null) {
+            return findAll();
+        }
+
+        SqlConnectionHelper.ensureTransactionIsStarted(getConnection());
+
+        final var sql = new StringBuilder();
+        sql.append("SELECT id, idType, firstname, secondname, firstlastname, secondlastname, ");
+        sql.append("email, phone, password, emailconfirmation, phoneconfirmation ");
+        sql.append("FROM users");
+
+        final java.util.List<String> whereClauses = new java.util.ArrayList<>();
+
+        if (filterEntity.getId() != null) {
+            whereClauses.add("id = ?");
+        }
+        if (filterEntity.getIdType() != null && filterEntity.getIdType().getId() != null) {
+            whereClauses.add("idtype = ?");
+        }
+        if (filterEntity.getFirstName() != null && !filterEntity.getFirstName().trim().isEmpty()) {
+            whereClauses.add("firstname ILIKE ?");
+        }
+        if (filterEntity.getSecondName() != null && !filterEntity.getSecondName().trim().isEmpty()) {
+            whereClauses.add("secondname ILIKE ?");
+        }
+        if (filterEntity.getFirstLastName() != null && !filterEntity.getFirstLastName().trim().isEmpty()) {
+            whereClauses.add("firstlastname ILIKE ?");
+        }
+        if (filterEntity.getSecondLastName() != null && !filterEntity.getSecondLastName().trim().isEmpty()) {
+            whereClauses.add("secondlastname ILIKE ?");
+        }
+        if (filterEntity.getEmail() != null && !filterEntity.getEmail().trim().isEmpty()) {
+            whereClauses.add("email ILIKE ?");
+        }
+        if (filterEntity.getPhoneNumber() != null && !filterEntity.getPhoneNumber().trim().isEmpty()) {
+            whereClauses.add("phonenumber ILIKE ?");
+        }
+
+
+        if (!whereClauses.isEmpty()) {
+            sql.append(" WHERE ");
+            sql.append(String.join(" AND ", whereClauses));
+        }
+
+        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql.toString())) {
+
+            int index = 1;
+            if (filterEntity.getId() != null) {
+                preparedStatement.setObject(index++, filterEntity.getId());
+            }
+            if (filterEntity.getIdType() != null && filterEntity.getIdType().getId() != null) {
+                preparedStatement.setObject(index++, filterEntity.getIdType().getId());
+            }
+            if (filterEntity.getFirstName() != null && !filterEntity.getFirstName().trim().isEmpty()) {
+                preparedStatement.setString(index++, "%" + filterEntity.getFirstName().trim() + "%");
+            }
+            if (filterEntity.getSecondName() != null && !filterEntity.getSecondName().trim().isEmpty()) {
+                preparedStatement.setString(index++, "%" + filterEntity.getSecondName().trim() + "%");
+            }
+            if (filterEntity.getFirstLastName() != null && !filterEntity.getFirstLastName().trim().isEmpty()) {
+                preparedStatement.setString(index++, "%" + filterEntity.getFirstLastName().trim() + "%");
+            }
+            if (filterEntity.getSecondLastName() != null && !filterEntity.getSecondLastName().trim().isEmpty()) {
+                preparedStatement.setString(index++, "%" + filterEntity.getSecondLastName().trim() + "%");
+            }
+            if (filterEntity.getEmail() != null && !filterEntity.getEmail().trim().isEmpty()) {
+                preparedStatement.setString(index++, "%" + filterEntity.getEmail().trim() + "%");
+            }
+            if (filterEntity.getPhoneNumber() != null && !filterEntity.getPhoneNumber().trim().isEmpty()) {
+                preparedStatement.setString(index++, "%" + filterEntity.getPhoneNumber().trim() + "%");
+            }
+
+
+            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+                final java.util.List<UserEntity> users = new java.util.ArrayList<>();
+                while (resultSet.next()) {
+                    final var user = new UserEntity(
+                            (UUID) resultSet.getObject("id"),
+                            resultSet.getString("identitydocument"),
+                            resultSet.getString("firstname"),
+                            resultSet.getString("secondname"),
+                            resultSet.getString("firstlastname"),
+                            resultSet.getString("secondlastname"),
+                            resultSet.getString("email"),
+                            resultSet.getString("phone"),
+                            resultSet.getString("username"),
+                            resultSet.getString("password"),
+                            resultSet.getBoolean("emailconfirmation"),
+                            resultSet.getBoolean("phoneconfirmation")
+                    );
+                    users.add(user);
+                }
+                return users;
+            }
+
+        } catch (final SQLException exception) {
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_FIND_BY_FILTER_SQL.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_SQL.getContent(),
+                    exception
+            );
+        } catch (final Exception exception) {
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_FIND_BY_FILTER_UNEXPECTED.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_UNEXPECTED.getContent(),
+                    (SQLException) exception
+            );
+        } catch (final Throwable exception) {
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_FIND_BY_FILTER_CRITICAL.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_CRITICAL.getContent(),
+                    (SQLException) exception
+            );
+        }
+    }
+
 
     @Override
     public List<UserEntity> findAll() {
-        // TODO Auto-generated method stub
-        return null;
+        SqlConnectionHelper.ensureTransactionIsStarted(getConnection());
+
+        final var sql = new StringBuilder();
+        sql.append("SELECT id, idType, firstname, secondname, firstlastname, secondlastname, ");
+        sql.append("email, phone, username, password, emailconfirmation, phoneconfirmation ");
+        sql.append("FROM users");
+
+        final List<UserEntity> users = new java.util.ArrayList<>();
+
+        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql.toString())) {
+            final ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                final var user = new UserEntity(
+                        (UUID) resultSet.getObject("id"),
+                        resultSet.getString("identitydocument"),
+                        resultSet.getString("firstname"),
+                        resultSet.getString("secondname"),
+                        resultSet.getString("firstlastname"),
+                        resultSet.getString("secondlastname"),
+                        resultSet.getString("email"),
+                        resultSet.getString("phone"),
+                        resultSet.getString("username"),
+                        resultSet.getString("password"),
+                        resultSet.getBoolean("emailconfirmation"),
+                        resultSet.getBoolean("phoneconfirmation")
+                );
+                users.add(user);
+            }
+            return users;
+
+        } catch (final SQLException exception) {
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_FIND_ALL_SQL.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_FIND_ALL_SQL.getContent(),
+                    (SQLException) exception
+            );
+        } catch (final Exception exception) {
+            throw new NoseException(
+                MessagesEnum.USER_ERROR_FIND_ALL_UNEXPECTED.getContent(),
+                MessagesEnum.TECHNICAL_ERROR_FIND_ALL_UNEXPECTED.getContent(),
+                    (SQLException) exception
+            );
+        } catch (final Throwable exception) {
+            throw new NoseException(
+              MessagesEnum.USER_ERROR_FIND_ALL_CRITICAL.getContent(),
+              MessagesEnum.TECHNICAL_ERROR_FIND_ALL_CRITICAL.getContent(),
+                    (SQLException) exception
+            );
+        }
     }
 
-    @Override
-    public List<UserEntity> findByFilter(UserEntity filterEntity) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
 
     @Override
     public UserEntity findById(UUID id) {
-        final String sql = "SELECT id, identitydocument, name, firstlastname, secondlastname, email, phone, username, password, emailconfirmation, phoneconfirmation, accountstate FROM users WHERE id = ?";
 
-        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql)) {
+        SqlConnectionHelper.ensureTransactionIsStarted(getConnection());
+
+        final var sql = new StringBuilder();
+
+        sql.append("SELECT id, identitydocument, name, firstlastname, secondlastname, email, phone, username, " +
+                "password, emailconfirmation, phoneconfirmation FROM users WHERE id = ?");
+
+        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql.toString())) {
 
             preparedStatement.setObject(1, id);
             final ResultSet resultSet = preparedStatement.executeQuery();
@@ -94,7 +264,8 @@ public final class UserPostgresqlDAO extends SqlConnection implements UserDAO {
                 return new UserEntity(
                         (UUID) resultSet.getObject("id"),
                         resultSet.getString("identitydocument"),
-                        resultSet.getString("name"),
+                        resultSet.getString("firstname"),
+                        resultSet.getString("secondname"),
                         resultSet.getString("firstlastname"),
                         resultSet.getString("secondlastname"),
                         resultSet.getString("email"),
@@ -102,8 +273,7 @@ public final class UserPostgresqlDAO extends SqlConnection implements UserDAO {
                         resultSet.getString("username"),
                         resultSet.getString("password"),
                         resultSet.getBoolean("emailconfirmation"),
-                        resultSet.getBoolean("phoneconfirmation"),
-                        resultSet.getBoolean("accountstate")
+                        resultSet.getBoolean("phoneconfirmation")
                 );
             } else {
                 return null;
@@ -130,7 +300,6 @@ public final class UserPostgresqlDAO extends SqlConnection implements UserDAO {
         }
     }
 
-
     @Override
     public void update(UserEntity entity) {
         SqlConnectionHelper.ensureTransactionIsStarted(getConnection());
@@ -147,21 +316,28 @@ public final class UserPostgresqlDAO extends SqlConnection implements UserDAO {
             preparedStatement.setString(8, entity.getEmail());
             preparedStatement.setString(9, entity.getPhoneNumber());
             preparedStatement.setBoolean(10, entity.isEmailConfirmed());
-            preparedStatement.setBoolean(11, entity.isMobileNumberConfirmed());
+            preparedStatement.setBoolean(11, entity.isPhoneNumberConfirmed());
             preparedStatement.setObject(12, entity.getId());
             preparedStatement.executeUpdate();
+
         } catch (final SQLException exception) {
-            var userMessage = "No se pudo actualizar el usuario";
-            var technicalMessage = "Se ha presentado un error al intentar actualizar el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_SQL_UPDATE.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_SQL_UPDATE.getContent(),
+                    (SQLException) exception
+            );
         } catch (final Exception exception) {
-            var userMessage = "No se pudo actualizar el usuario";
-            var technicalMessage = "Se ha presentado un error inesperado al intentar actualizar el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_UNEXPECTED_UPDATE.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_UNEXPECTED_UPDATE.getContent(),
+                    (SQLException) exception
+            );
         } catch (final Throwable exception) {
-            var userMessage = "No se pudo actualizar el usuario";
-            var technicalMessage = "Se ha presentado un error critico al intentar actualizar el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_CRITICAL_UPDATE.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_CRITICAL_UPDATE.getContent(),
+                    (SQLException) exception
+            );
         }
     }
 
@@ -173,18 +349,25 @@ public final class UserPostgresqlDAO extends SqlConnection implements UserDAO {
         try (var preparedStatement = this.getConnection().prepareStatement(sql.toString())) {
             preparedStatement.setObject(1, id);
             preparedStatement.executeUpdate();
+
         } catch (final SQLException exception) {
-            var userMessage = "No se pudo eliminar el usuario";
-            var technicalMessage = "Se ha presentado un error al intentar eliminar el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_SQL_DELETE.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_SQL_UPDATE.getContent(),
+                    (SQLException) exception
+            );
         } catch (final Exception exception) {
-            var userMessage = "No se pudo eliminar el usuario";
-            var technicalMessage = "Se ha presentado un error inesperado al intentar eliminar el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_UNEXPECTED_DELETE.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_UNEXPECTED_DELETE.getContent(),
+                    (SQLException) exception
+            );
         } catch (final Throwable exception) {
-            var userMessage = "No se pudo eliminar el usuario";
-            var technicalMessage = "Se ha presentado un error critico al intentar eliminar el usuario en la base de datos. Por favor verifique la traza completa del error";
-            throw NoseException.create(exception, userMessage, technicalMessage);
+            throw new NoseException(
+                    MessagesEnum.USER_ERROR_CRITICAL_DELETE.getContent(),
+                    MessagesEnum.TECHNICAL_ERROR_CRITICAL_DELETE.getContent(),
+                    (SQLException) exception
+            );
         }
     }
 

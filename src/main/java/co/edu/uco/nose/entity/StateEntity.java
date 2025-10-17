@@ -25,7 +25,10 @@ public class StateEntity extends Entity{
 		this.name = name;
 	}
 
-	public String getName() {
+    public StateEntity(UUID stateId, Object o, Object o1) {
+    }
+
+    public String getName() {
 		return name;
 	}
 
