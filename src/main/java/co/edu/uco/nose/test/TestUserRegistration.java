@@ -29,7 +29,7 @@ public class TestUserRegistration {
             user.setFirstSurname("Isabel");
             user.setSecondName("Rivillas");
             user.setSecondSurname("Monsalve");
-            user.setEmail("cla.rivillas@uco.net.co");
+            user.setEmail("cla.rivillas@uco.net.co.");
             user.setMobileNumber("3117253052");
 
             var facade = new UserFacadeImpl();
