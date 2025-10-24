@@ -10,11 +10,12 @@ import java.util.UUID;
 
 import co.edu.uco.nose.crosscuting.exception.NoseException;
 import co.edu.uco.nose.crosscuting.helper.SqlConnectionHelper;
+import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 import co.edu.uco.nose.crosscuting.messagescatalog.MessagesEnum;
 import co.edu.uco.nose.data.dao.entity.CityDAO;
 import co.edu.uco.nose.data.dao.entity.IdTypeDAO;
-import co.edu.uco.nose.data.dao.entity.SqlConnection;
 import co.edu.uco.nose.entity.CityEntity;
+import co.edu.uco.nose.entity.CountryEntity;
 import co.edu.uco.nose.entity.StateEntity;
 
 public final class CityPostgresqlDAO extends SqlConnection implements CityDAO {
@@ -23,172 +24,153 @@ public final class CityPostgresqlDAO extends SqlConnection implements CityDAO {
         super(connection);
     }
 
+    private void mapResultSetToCity(final java.sql.ResultSet resultSet, final CityEntity entity) {
+        try {
+            var country = new CountryEntity();
+            country.setId(UUIDHelper.getUUIDHelper().getFromString(resultSet.getString("idPais")));
+            country.setName(resultSet.getString("nombrePais"));
 
+            var state = new StateEntity();
+            state.setId(UUIDHelper.getUUIDHelper().getFromString(resultSet.getString("idDepartamento")));
+            state.setName(resultSet.getString("nombreDepartamento"));
+            state.setCountry(country);
+
+            entity.setId(UUIDHelper.getUUIDHelper().getFromString(resultSet.getString("idCiudad")));
+            entity.setName(resultSet.getString("nombreCiudad"));
+            entity.setState(state);
+
+        } catch (final SQLException exception) {
+            var userMessage = MessagesEnum.USER_ERROR_SQL_MAPPING_CITY.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_MAPPING_CITY.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
+        }
+    }
 
     @Override
     public List<CityEntity> findAll() {
-
-        SqlConnectionHelper.ensureTransactionIsStarted(getConnection());
-
-        final var sql = new StringBuilder();
-        sql.append("SELECT id, name, state_id FROM city");
-
+        SqlConnectionHelper.ensureConnectionIsNotNull(getConnection());
         final List<CityEntity> cities = new ArrayList<>();
+        final var sql = new StringBuilder();
+        sql.append("SELECT c.id AS idCiudad, c.nombre AS nombreCiudad, ");
+        sql.append("d.id AS idDepartamento, d.nombre AS nombreDepartamento, ");
+        sql.append("p.id AS idPais, p.nombre AS nombrePais ");
+        sql.append("FROM Ciudad c ");
+        sql.append("INNER JOIN Departamento d ON c.departamento = d.id ");
+        sql.append("INNER JOIN Pais p ON d.pais = p.id ");
 
-        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql.toString())) {
-            final ResultSet resultSet = preparedStatement.executeQuery();
+        try (var preparedStatement = getConnection().prepareStatement(sql.toString());
+             var resultSet = preparedStatement.executeQuery()) {
 
             while (resultSet.next()) {
-                var city = new CityEntity(
-                        (UUID) resultSet.getObject("id"),
-                        resultSet.getString("name"),
-                        new StateEntity((UUID) resultSet.getObject("state_id"), null, null)
-                );
+                var city = new CityEntity();
+                mapResultSetToCity(resultSet, city);
                 cities.add(city);
             }
-
-            return cities;
-
         } catch (final SQLException exception) {
-            throw new NoseException(
-                    MessagesEnum.CITY_ERROR_FIND_ALL_SQL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_ALL_SQL_CITY.getContent(),
-                    (SQLException) exception
-            );
+            var userMessage = MessagesEnum.USER_ERROR_SQL_EXECUTING_FIND_ALL_CITY.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_EXECUTING_FIND_ALL_CITY.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
+
         } catch (final Exception exception) {
-            throw new NoseException(
-                    MessagesEnum.CITY_ERROR_FIND_ALL_UNEXPECTED.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_ALL_UNEXPECTED_CITY.getContent(),
-                    (SQLException) exception
-            );
-        } catch (final Throwable exception) {
-            throw new NoseException(
-                    MessagesEnum.CITY_ERROR_FIND_ALL_CRITICAL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_ALL_CRITICAL_CITY.getContent(),
-                    (SQLException) exception
-            );
+            var userMessage = MessagesEnum.USER_ERROR_SQL_UNEXPECTED_ERROR_FIND_ALL_CITY.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_UNEXPECTED_ERROR_FIND_ALL_CITY.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
         }
+        return cities;
     }
 
-    // java
     @Override
-    public List<CityEntity> findByFilter(CityEntity filterEntity) {
-        if (filterEntity == null) {
-            return findAll();
-        }
+    public List<CityEntity> findByFilter(final CityEntity filterEntity) {
 
-        SqlConnectionHelper.ensureTransactionIsStarted(getConnection());
-
-        final var sql = new StringBuilder();
-        sql.append("SELECT id, name, state_id FROM city");
-
-        final List<String> whereClauses = new ArrayList<>();
-
-        if (filterEntity.getId() != null) {
-            whereClauses.add("id = ?");
-        }
-        if (filterEntity.getName() != null && !filterEntity.getName().trim().isEmpty()) {
-            whereClauses.add("name ILIKE ?");
-        }
-        // Validar la entidad State y su id antes de usarlo
-        if (filterEntity.getState() != null && filterEntity.getState().getId() != null) {
-            whereClauses.add("state_id = ?");
-        }
-
-        if (!whereClauses.isEmpty()) {
-            sql.append(" WHERE ");
-            sql.append(String.join(" AND ", whereClauses));
-        }
+        SqlConnectionHelper.ensureConnectionIsNotNull(getConnection());
 
         final List<CityEntity> cities = new ArrayList<>();
+        final var sql = new StringBuilder();
+        final var parameters = new ArrayList<Object>();
 
-        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql.toString())) {
+        sql.append("SELECT c.id AS idCiudad, c.nombre AS nombreCiudad, ");
+        sql.append("d.id AS idDepartamento, d.nombre AS nombreDepartamento, ");
+        sql.append("p.id AS idPais, p.nombre AS nombrePais ");
+        sql.append("FROM Ciudad c ");
+        sql.append("INNER JOIN Departamento d ON c.departamento = d.id ");
+        sql.append("INNER JOIN Pais p ON d.pais = p.id ");
+        sql.append("WHERE 1=1 ");
 
-            int index = 1;
-            if (filterEntity.getId() != null) {
-                preparedStatement.setObject(index++, filterEntity.getId());
+        final UUID defaultUuid = UUIDHelper.getUUIDHelper().getDefault();
+        if (filterEntity.getId() != null && !defaultUuid.equals(filterEntity.getId())) {
+            sql.append("AND c.id = ? ");
+            parameters.add(filterEntity.getId());
+        }
+        if (filterEntity.getName() != null && !filterEntity.getName().trim().isEmpty()) {
+            sql.append("AND c.nombre LIKE ? ");
+            parameters.add("%" + filterEntity.getName().trim() + "%");
+        }
+        if (filterEntity.getState() != null) {
+            if (filterEntity.getState().getId() != null && !defaultUuid.equals(filterEntity.getState().getId())) {
+                sql.append("AND d.id = ? ");
+                parameters.add(filterEntity.getState().getId());
             }
-            if (filterEntity.getName() != null && !filterEntity.getName().trim().isEmpty()) {
-                preparedStatement.setString(index++, "%" + filterEntity.getName().trim() + "%");
+            if (filterEntity.getState().getCountry() != null && filterEntity.getState().getCountry().getId() != null && !defaultUuid.equals(filterEntity.getState().getCountry().getId())) {
+                sql.append("AND p.id = ? ");
+                parameters.add(filterEntity.getState().getCountry().getId());
             }
-            if (filterEntity.getState() != null && filterEntity.getState().getId() != null) {
-                preparedStatement.setObject(index++, filterEntity.getState().getId());
-            }
+        }
 
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+        try (var preparedStatement = getConnection().prepareStatement(sql.toString())) {
+            for (int i = 0; i < parameters.size(); i++) {
+                preparedStatement.setObject(i + 1, parameters.get(i));
+            }
+            try (var resultSet = preparedStatement.executeQuery()) {
                 while (resultSet.next()) {
-                    var city = new CityEntity(
-                            (UUID) resultSet.getObject("id"),
-                            resultSet.getString("name"),
-                            new StateEntity((UUID) resultSet.getObject("state_id"), null, null)
-                    );
+                    var city = new CityEntity();
+                    mapResultSetToCity(resultSet, city);
                     cities.add(city);
                 }
-                return cities;
             }
-
         } catch (final SQLException exception) {
-            throw new NoseException(
-                    MessagesEnum.CITY_ERROR_FIND_BY_FILTER_SQL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_SQL_CITY.getContent(),
-                    exception
-            );
+            var userMessage = MessagesEnum.USER_ERROR_SQL_EXECUTING_FIND_BY_FILTER_CITY.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_EXECUTING_FIND_BY_FILTER_CITY.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
         } catch (final Exception exception) {
-            throw new NoseException(
-                    MessagesEnum.CITY_ERROR_FIND_BY_FILTER_UNEXPECTED.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_UNEXPECTED_CITY.getContent(),
-                    (SQLException) exception
-            );
-        } catch (final Throwable exception) {
-            throw new NoseException(
-                    MessagesEnum.CITY_ERROR_FIND_BY_FILTER_CRITICAL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_CRITICAL_CITY.getContent(),
-                    (SQLException) exception
-            );
+            var userMessage = MessagesEnum.USER_ERROR_SQL_UNEXPECTED_ERROR_FIND_BY_FILTER_CITY.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_UNEXPECTED_ERROR_FIND_BY_FILTER_CITY.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
         }
+        return cities;
     }
-
 
     @Override
     public CityEntity findById(final UUID id) {
-
-        SqlConnectionHelper.ensureTransactionIsStarted(getConnection());
-
+        SqlConnectionHelper.ensureConnectionIsNotNull(getConnection());
+        CityEntity city = null;
         final var sql = new StringBuilder();
-        sql.append("SELECT id, name, state_id FROM city WHERE id = ?");
+        sql.append("SELECT c.id AS idCiudad, c.nombre AS nombreCiudad, ");
+        sql.append("d.id AS idDepartamento, d.nombre AS nombreDepartamento, ");
+        sql.append("p.id AS idPais, p.nombre AS nombrePais ");
+        sql.append("FROM Ciudad c ");
+        sql.append("INNER JOIN Departamento d ON c.departamento = d.id ");
+        sql.append("INNER JOIN Pais p ON d.pais = p.id ");
+        sql.append("WHERE c.id = ? ");
 
-        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql.toString())) {
-
+        try (var preparedStatement = getConnection().prepareStatement(sql.toString())) {
             preparedStatement.setObject(1, id);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                return new CityEntity(
-                        (UUID) resultSet.getObject("id"),
-                        resultSet.getString("name"),
-                        new StateEntity((UUID) resultSet.getObject("state_id"), null, null)
-                );
+            try (var resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    city = new CityEntity();
+                    mapResultSetToCity(resultSet, city);
+                }
             }
-            return null;
-
         } catch (final SQLException exception) {
-            throw new NoseException(
-                    MessagesEnum.CITY_ERROR_FIND_BY_ID_SQL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_ID_SQL_CITY.getContent(),
-                    (SQLException) exception
-            );
+            var userMessage = MessagesEnum.USER_ERROR_SQL_EXECUTING_FIND_BY_ID_CITY.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_EXECUTING_FIND_BY_ID_CITY.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
+        } catch (final NoseException exception) {
+            throw exception;
         } catch (final Exception exception) {
-            throw new NoseException(
-                    MessagesEnum.CITY_ERROR_FIND_BY_ID_UNEXPECTED.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_ID_UNEXPECTED_CITY.getContent(),
-                    (SQLException) exception
-            );
-        } catch (final Throwable exception) {
-            throw new NoseException(
-                    MessagesEnum.CITY_ERROR_FIND_BY_ID_CRITICAL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_ID_CRITICAL_CITY.getContent(),
-                    (SQLException) exception
-            );
+            var userMessage = MessagesEnum.USER_ERROR_SQL_UNEXPECTED_ERROR_FIND_BY_ID_CITY.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_UNEXPECTED_ERROR_FIND_BY_ID_CITY.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
         }
+        return city;
     }
 }

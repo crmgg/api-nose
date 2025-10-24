@@ -1,8 +1,6 @@
 package co.edu.uco.nose.data.dao.entity.postgresql;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,9 +8,9 @@ import java.util.UUID;
 
 import co.edu.uco.nose.crosscuting.exception.NoseException;
 import co.edu.uco.nose.crosscuting.helper.SqlConnectionHelper;
+import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 import co.edu.uco.nose.crosscuting.messagescatalog.MessagesEnum;
 import co.edu.uco.nose.data.dao.entity.IdTypeDAO;
-import co.edu.uco.nose.data.dao.entity.SqlConnection;
 import co.edu.uco.nose.entity.IdTypeEntity;
 
 public final class IdTypePostgresqlDAO extends SqlConnection implements IdTypeDAO {
@@ -21,162 +19,116 @@ public final class IdTypePostgresqlDAO extends SqlConnection implements IdTypeDA
         super(connection);
     }
 
+    private void mapResultSetToIdType(final java.sql.ResultSet resultSet, final IdTypeEntity entity) {
+        try {
+            entity.setId(UUIDHelper.getUUIDHelper().getFromString(resultSet.getString("id")));
+            entity.setName(resultSet.getString("nombre"));
+
+        } catch (final SQLException exception) {
+            var userMessage = MessagesEnum.USER_ERROR_SQL_MAPPING_IDTYPE.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_MAPPING_IDTYPE.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
+        }
+    }
+
     @Override
     public List<IdTypeEntity> findAll() {
-        SqlConnectionHelper.ensureTransactionIsStarted(getConnection());
 
-        final String sql = "SELECT id, name, abbreviation FROM idtype";
+        SqlConnectionHelper.ensureConnectionIsNotNull(getConnection());
 
-        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql)) {
-            final ResultSet resultSet = preparedStatement.executeQuery();
+        final List<IdTypeEntity> idTypes = new ArrayList<>();
+        final String sql = "SELECT id, nombre FROM TipoIdentificacion";
 
-            final List<IdTypeEntity> idTypes = new ArrayList<>();
+        try (var preparedStatement = getConnection().prepareStatement(sql);
+             var resultSet = preparedStatement.executeQuery()) {
 
             while (resultSet.next()) {
-                final IdTypeEntity entity = new IdTypeEntity(
-                        (UUID) resultSet.getObject("id"),
-                        resultSet.getString("name"),
-                        resultSet.getString("abbreviation"));
-                idTypes.add(entity);
+                var idType = new IdTypeEntity();
+                mapResultSetToIdType(resultSet, idType);
+                idTypes.add(idType);
             }
 
-            return idTypes;
-
         } catch (final SQLException exception) {
-            throw NoseException.create(
-                    exception,
-                    MessagesEnum.ID_TYPE_ERROR_FIND_BY_ID_SQL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_ID_SQL_ID_TYPE.getContent()
-            );
+            var userMessage = MessagesEnum.USER_ERROR_SQL_EXECUTING_FIND_ALL_IDTYPE.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_EXECUTING_FIND_ALL_IDTYPE.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
 
         } catch (final Exception exception) {
-            throw NoseException.create(
-                    exception,
-                    MessagesEnum.ID_TYPE_ERROR_FIND_BY_ID_UNEXPECTED.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_ID_UNEXPECTED_ID_TYPE.getContent()
-            );
-
-        } catch (final Throwable exception) {
-            throw NoseException.create(
-                    exception,
-                    MessagesEnum.ID_TYPE_ERROR_FIND_BY_ID_CRITICAL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_ID_CRITICAL_ID_TYPE.getContent()
-            );
+            var userMessage = MessagesEnum.USER_ERROR_SQL_UNEXPECTED_ERROR_FIND_ALL_IDTYPE.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_UNEXPECTED_ERROR_FIND_ALL_IDTYPE.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
         }
+        return idTypes;
     }
 
     @Override
-    public List<IdTypeEntity> findByFilter(IdTypeEntity filterEntity) {
-        if (filterEntity == null) {
-            return findAll();
-        }
+    public List<IdTypeEntity> findByFilter(final IdTypeEntity filterEntity) {
 
-        SqlConnectionHelper.ensureTransactionIsStarted(getConnection());
-
-        final var sql = new StringBuilder();
-        sql.append("SELECT id, name, abbreviation FROM idtype");
-
-        final List<String> whereClauses = new ArrayList<>();
-
-        if (filterEntity.getId() != null) {
-            whereClauses.add("id = ?");
-        }
-        if (filterEntity.getName() != null && !filterEntity.getName().trim().isEmpty()) {
-            whereClauses.add("name ILIKE ?");
-        }
-
-
-        if (!whereClauses.isEmpty()) {
-            sql.append(" WHERE ");
-            sql.append(String.join(" AND ", whereClauses));
-        }
+        SqlConnectionHelper.ensureConnectionIsNotNull(getConnection());
 
         final List<IdTypeEntity> idTypes = new ArrayList<>();
+        final var sql = new StringBuilder("SELECT id, nombre FROM TipoIdentificacion WHERE 1=1 ");
+        final var parameters = new ArrayList<Object>();
 
-        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql.toString())) {
-
-            int index = 1;
-            if (filterEntity.getId() != null) {
-                preparedStatement.setObject(index++, filterEntity.getId());
-            }
-            if (filterEntity.getName() != null && !filterEntity.getName().trim().isEmpty()) {
-                preparedStatement.setString(index++, "%" + filterEntity.getName().trim() + "%");
-            }
-
-            try (final ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    final IdTypeEntity entity = new IdTypeEntity(
-                            (UUID) resultSet.getObject("id"),
-                            resultSet.getString("name"),
-                            resultSet.getString("abbreviation"));
-                    idTypes.add(entity);
-                }
-                return idTypes;
-            }
-
-        } catch (final SQLException exception) {
-            throw new NoseException(
-                    MessagesEnum.ID_TYPE_ERROR_FIND_BY_FILTER_SQL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_SQL_ID_TYPE.getContent(),
-                    exception
-            );
-
-        } catch (final Exception exception) {
-            throw new NoseException(
-                    MessagesEnum.ID_TYPE_ERROR_FIND_BY_FILTER_UNEXPECTED.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_UNEXPECTED_ID_TYPE.getContent(),
-                    (SQLException) exception
-            );
-
-        } catch (final Throwable exception) {
-            throw new NoseException(
-                    MessagesEnum.ID_TYPE_ERROR_FIND_BY_FILTER_CRITICAL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_CRITICAL_ID_TYPE.getContent(),
-                    (SQLException) exception
-            );
+        if (filterEntity.getId() != null && !UUIDHelper.getUUIDHelper().getDefault().equals(filterEntity.getId())) {
+            sql.append("AND id = ? ");
+            parameters.add(filterEntity.getId());
         }
-    }
+        if (filterEntity.getName() != null && !filterEntity.getName().trim().isEmpty()) {
+            sql.append("AND nombre LIKE ? ");
+            parameters.add("%" + filterEntity.getName().trim() + "%");
+        }
 
+        try (var preparedStatement = getConnection().prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < parameters.size(); i++) {
+                preparedStatement.setObject(i + 1, parameters.get(i));
+            }
+            try (var resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    var idType = new IdTypeEntity();
+                    mapResultSetToIdType(resultSet, idType);
+                    idTypes.add(idType);
+                }
+            }
+        } catch (final SQLException exception) {
+            var userMessage = MessagesEnum.USER_ERROR_SQL_EXECUTING_FIND_BY_FILTER_IDTYPE.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_EXECUTING_FIND_BY_FILTER_IDTYPE.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
+        } catch (final NoseException exception) {
+            throw exception;
+        } catch (final Exception exception) {
+            var userMessage = MessagesEnum.USER_ERROR_SQL_UNEXPECTED_ERROR_FIND_BY_FILTER_IDTYPE.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_UNEXPECTED_ERROR_FIND_BY_FILTER_IDTYPE.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
+        }
+        return idTypes;
+    }
 
     @Override
     public IdTypeEntity findById(final UUID id) {
-        SqlConnectionHelper.ensureTransactionIsStarted(getConnection());
+        SqlConnectionHelper.ensureConnectionIsNotNull(getConnection());
+        IdTypeEntity idType = null;
+        final String sql = "SELECT id, nombre FROM TipoIdentificacion WHERE id = ?";
 
-        final String sql = "SELECT id, name, abbreviation FROM idtype WHERE id = ?";
-
-        try (final PreparedStatement preparedStatement = getConnection().prepareStatement(sql)) {
+        try (var preparedStatement = getConnection().prepareStatement(sql)) {
             preparedStatement.setObject(1, id);
-            final ResultSet resultSet = preparedStatement.executeQuery();
-
-            if (resultSet.next()) {
-                return new IdTypeEntity(
-                        (UUID) resultSet.getObject("id"),
-                        resultSet.getString("name"),
-                        resultSet.getString("abbreviation"));
+            try (var resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    idType = new IdTypeEntity();
+                    mapResultSetToIdType(resultSet, idType);
+                }
             }
-
-            return null;
-
         } catch (final SQLException exception) {
-            throw new NoseException(
-                    MessagesEnum.ID_TYPE_ERROR_FIND_BY_FILTER_SQL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_SQL_ID_TYPE.getContent(),
-                    (SQLException) exception
-            );
+            var userMessage = MessagesEnum.USER_ERROR_SQL_EXECUTING_FIND_BY_ID_IDTYPE.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_EXECUTING_FIND_BY_ID_IDTYPE.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
 
         } catch (final Exception exception) {
-            throw new NoseException(
-                    MessagesEnum.ID_TYPE_ERROR_FIND_BY_FILTER_UNEXPECTED.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_UNEXPECTED_ID_TYPE.getContent(),
-                    (SQLException) exception
-            );
-
-        } catch (final Throwable exception) {
-            throw new NoseException(
-                    MessagesEnum.ID_TYPE_ERROR_FIND_BY_FILTER_CRITICAL.getContent(),
-                    MessagesEnum.TECHNICAL_ERROR_FIND_BY_FILTER_CRITICAL_ID_TYPE.getContent(),
-                    (SQLException) exception
-            );
+            var userMessage = MessagesEnum.USER_ERROR_SQL_UNEXPECTED_ERROR_FIND_BY_ID_IDTYPE.getContent();
+            var technicalMessage = MessagesEnum.TECHNICAL_ERROR_SQL_UNEXPECTED_ERROR_FIND_BY_ID_IDTYPE.getContent();
+            throw NoseException.create(exception, userMessage, technicalMessage);
         }
+        return idType;
     }
 }

@@ -7,34 +7,36 @@ import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 
 public final class CountryDTO extends DTO{
 
-	
-	private String name;
-	
-	public CountryDTO() {
-		super(UUIDHelper.getUUIDHelper().getDefault());
-		setName(TextHelper.getDefault());
-	}
 
-	public CountryDTO(final UUID id) {
-		super(id);
-		setName(TextHelper.getDefault());
-	}
-	
-	public CountryDTO(final UUID id,final String name) {
-		super(id);
-		this.name = name;
-	}
+    private String name;
 
-	
+    public CountryDTO() {
+        super(UUIDHelper.getUUIDHelper().getDefault());
+        setName(TextHelper.getDefault());
+    }
 
-	public String getName() {
-		return name;
-	}
+    public CountryDTO (final UUID id) {
+        super(id);
+        setName(TextHelper.getDefault());
+    }
 
-	public void setName(final String name) {
-		this.name = TextHelper.getDefaultWithTrim(name);
-	}
-	
-	
+    public CountryDTO(final UUID id, final String name) {
+        super(id);
+        setName(name);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(final String name) {
+        this.name = TextHelper.getDefaultWithTrim(name);
+    }
+
+    public static CountryDTO createDefault() {
+        return new CountryDTO();
+    }
+
+
 
 }

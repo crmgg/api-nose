@@ -1,5 +1,5 @@
 package co.edu.uco.nose.data.dao;
 
-public interface Delete<ID> {
+public interface DeleteDAO<ID> {
 	void delete(ID id);
 }
