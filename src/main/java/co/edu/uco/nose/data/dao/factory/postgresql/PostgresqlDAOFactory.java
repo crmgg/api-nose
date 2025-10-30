@@ -22,7 +22,7 @@ public final class PostgresqlDAOFactory extends DAOFactory {
     @Override
     protected void openConnection() {
 
-        String url = "jdbc:postgresql://localhost:5432/apiNose";
+        String url = "jdbc:postgresql://localhost:9000/apiNose";
         String user = "postgres";
         String password = "C2wvVCP18#6@";
         //Practica pasar estas credenciales a properties

@@ -8,7 +8,6 @@ import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 
 public class UserEntity extends Entity {
 
-
     private IdTypeEntity idType;
     private String identificationNumber;
     private String firstName;

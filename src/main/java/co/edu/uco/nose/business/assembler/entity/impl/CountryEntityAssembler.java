@@ -1,14 +1,15 @@
 package co.edu.uco.nose.business.assembler.entity.impl;
 
-import java.util.List;
-
 import co.edu.uco.nose.business.assembler.entity.EntityAssembler;
 import co.edu.uco.nose.business.domain.CountryDomain;
 import co.edu.uco.nose.crosscuting.helper.ObjectHelper;
 import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 import co.edu.uco.nose.entity.CountryEntity;
 
-public class CountryEntityAssembler implements EntityAssembler<CountryEntity, CountryDomain> {
+import java.util.ArrayList;
+import java.util.List;
+
+public final class CountryEntityAssembler implements EntityAssembler<CountryEntity, CountryDomain> {
 
     private static final EntityAssembler<CountryEntity,CountryDomain> instance =
             new CountryEntityAssembler();
@@ -33,8 +34,14 @@ public class CountryEntityAssembler implements EntityAssembler<CountryEntity, Co
     }
 
     @Override
-    public List<CountryEntity> toDTO(List<CountryDomain> domainList) {
-        return List.of();
-    }
+    public List<CountryEntity> toEntity(List<CountryDomain> domainList) {
+        var domainListTmp = ObjectHelper.getDefault(domainList, new ArrayList<CountryDomain>());
+        var entityList = new ArrayList<CountryEntity>();
 
-}
+        for (var domain : domainListTmp) {
+            entityList.add(toEntity(domain));
+        }
+
+        return entityList;
+        }
+    }

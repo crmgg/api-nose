@@ -1,5 +1,6 @@
 package co.edu.uco.nose.business.assembler.dto.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import co.edu.uco.nose.dto.CityDTO;
@@ -7,6 +8,8 @@ import co.edu.uco.nose.business.assembler.dto.DTOAssembler;
 import co.edu.uco.nose.business.domain.CityDomain;
 import co.edu.uco.nose.crosscuting.helper.ObjectHelper;
 import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
+import co.edu.uco.nose.dto.CityDTO;
+import co.edu.uco.nose.dto.UserDTO;
 
 public final class CityDTOAssembler implements DTOAssembler<CityDTO, CityDomain> {
 
@@ -37,7 +40,13 @@ public final class CityDTOAssembler implements DTOAssembler<CityDTO, CityDomain>
 
     @Override
     public List<CityDTO> toDTO(List<CityDomain> domainList) {
-        return List.of();
-    }
+        var domainListTmp = ObjectHelper.getDefault(domainList, new ArrayList<CityDomain>());
+        var dtoList = new ArrayList<CityDTO>();
 
+        for (var domain : domainListTmp) {
+            dtoList.add(toDTO(domain));
+        }
+
+        return dtoList;
+    }
 }
