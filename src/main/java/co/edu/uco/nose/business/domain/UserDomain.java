@@ -180,4 +180,12 @@ public class UserDomain extends Domain {
     public void setMobileNumberConfirmedIsDefualtValue(final boolean mobileNumberConfirmedIsDefualtValue) {
         this.mobileNumberConfirmedIsDefualtValue = mobileNumberConfirmedIsDefualtValue;
     }
+
+    public String getFirstLastName() {
+        return null;
+    }
+
+    public String getSecondLastName() {
+        return null;
+    }
 }

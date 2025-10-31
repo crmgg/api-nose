@@ -8,7 +8,7 @@ import co.edu.uco.nose.crosscuting.helper.UUIDHelper;
 
 public class CityDTO extends DTO{
     private String name;
-    private StateDTO department;
+    private StateDTO state;
 
     public CityDTO() {
         super(UUIDHelper.getUUIDHelper().getDefault());
@@ -37,14 +37,18 @@ public class CityDTO extends DTO{
     }
 
     public StateDTO getDepartment() {
-        return department;
+        return state;
     }
 
     public void setState(StateDTO state) {
-        this.department = ObjectHelper.getDefault(department, StateDTO.createDefault());
+        this.state = ObjectHelper.getDefault(state, StateDTO.createDefault());
     }
 
     public static CityDTO createDefault() {
         return new CityDTO();
+    }
+
+    public StateDTO getState() {
+        return state;
     }
 }

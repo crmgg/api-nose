@@ -12,38 +12,24 @@ public class Response <T> {
     private List<T> data;
     private boolean responseSucceded;
 
-    public Response(final boolean responseSucceded) {
-        setResponseSucceded(responseSucceded);
-        setMessages(new ArrayList<String>());
-        setData(new ArrayList<T>());
+    public Response(ArrayList<String> strings, ArrayList<Object> objects, boolean b) {
+
     }
 
-    public Response(final List<String> messages, final List<T> data, final boolean responseSucceded) {
-        setResponseSucceded(responseSucceded);
-        setMessages(messages);
-        setData(data);
-    }
-
-    public static <T> Response <T> createSuccededResponse(){
+    public static <T> Response<T> createSuccededResponse() {
         return new Response<>(new ArrayList<String>(), new ArrayList<>(), true);
     }
 
-    public static <T> Response <T> createFailedResponse() {
+    public static <T> Response<T> createFailedResponse(final List<T> data) {
+        return new Response<>(new ArrayList<String>(), (ArrayList<Object>) data, false);
+    }
+
+    public static <T> Response<T> createSuccededResponse(final List<T> data) {
+        return new Response<>(new ArrayList<String>(), (ArrayList<Object>) data, true);
+    }
+
+    public static <T> Response<T> createFailedResponse() {
         return new Response<>(new ArrayList<String>(), new ArrayList<>(), false);
-    }
-
-    public static <T> Response <T> createSuccededResponse(final List<T> data){
-        return new Response<>(new ArrayList<String>(), data, true);
-    }
-
-    public static <T> Response <T> createFailedResponse(final List<T> data) {
-        return new Response<>(new ArrayList<String>(), data, false);
-    }
-
-    public void addMessage(final String message) {
-        if(!TextHelper.isEmptyWithTrim(message)) {
-            getMessages().add(message);
-        }
     }
 
     public List<String> getMessages() {
@@ -54,11 +40,17 @@ public class Response <T> {
         this.messages = ObjectHelper.getDefault(messages, new ArrayList<String>());
     }
 
+    public void addMessage(final String message) {
+        if (!TextHelper.isEmptyWithTrim(message)) {
+            getMessages().add(message);
+        }
+    }
+
     public List<T> getData() {
         return data;
     }
 
-    public void setData(final List<T> data) {
+    public void setData(List<T> data) {
         this.data = ObjectHelper.getDefault(data, new ArrayList<T>());
     }
 
@@ -70,6 +62,5 @@ public class Response <T> {
         this.responseSucceded = responseSucceded;
     }
 
-
-
 }
+

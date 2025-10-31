@@ -27,5 +27,5 @@ public interface UserFacade {
 
     void sendEmailConfirmation(UUID id);
 
-
+    void updateUserInformation(UUID id, UserDTO user);
 }
